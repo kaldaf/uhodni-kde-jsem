@@ -1,9 +1,24 @@
+const public = this;
+
 Vue.component(('map-main'), {
     template: `
-       <div class="maps" v-bind:class="{ showed: showed }">
-            <div class="mapa" id="main-map"></div>
-            <div class="panorama"></div>
-       </div>
+        <div class="app-data">
+            <div class="maps" v-bind:class="{ showed: showed }">
+                <div class="mapa" id="main-map"></div>
+                <div class="panorama"></div>
+            </div>
+            <div class="side-wrapper">
+                <div class="settings">
+                    <h3>Informační panel</h3>
+                    <p v-if="message.length > 0"><b>Výsledek</b>: {{message}}</p>
+                    <p><b>Město</b>: {{resultCity}}</p>
+                </div>
+                <div class="copy">
+                    <p>vytvořilo</p>
+                    <a href="https://twentio.cz"><img src="https://twentio.cz/assets/logo/logo.svg"></a>
+                </div>
+            </div>
+        </div>
     `,
     data() {
         return {
@@ -11,22 +26,63 @@ Vue.component(('map-main'), {
             index: null,
             selectedCoords: [],
             actualLayer: null,
+            actualMarker: null,
             message: '',
+            resultCity: '???',
             mapPoints: [{
-                    coords: [16.4537781, 49.9012947],
-                    panoramaId: 58407976
-                },
-                {
                     coords: [16.3109993, 49.8705186],
-                    panoramaId: 59070154
+                    panoramaId: 59070154,
+                    name: 'Litomyšl'
                 },
                 {
-                    coords: [15.9043054, 50.5806696],
-                    panoramaId: 65355549
+                    coords: [16.6111074, 49.9119302],
+                    panoramaId: 58098546,
+                    name: 'Lanškroun'
                 },
                 {
                     coords: [15.8327123, 50.2090749],
-                    panoramaId: 68669620
+                    panoramaId: 68669620,
+                    name: 'Hradec Králové'
+                },
+                {
+                    coords: [16.4680344, 49.7562868],
+                    panoramaId: 59262006,
+                    name: 'Svitavy'
+                },
+                {
+                    coords: [16.2659757, 49.7143888],
+                    panoramaId: 59204394,
+                    name: 'Polička'
+                },
+                {
+                    coords: [15.7792888, 50.0384971],
+                    panoramaId: 68222468,
+                    name: 'Pardubice'
+                },
+                {
+                    coords: [14.4213925, 50.0875035],
+                    panoramaId: 68069556,
+                    name: 'Staroměstské náměstí'
+                },
+                {
+                    coords: [12.8663186, 50.2302053],
+                    panoramaId: 54970771,
+                    name: 'Karlovy Vary'
+                },
+                {
+                    coords: [17.3080903, 49.5596208],
+                    panoramaId: 15288806,
+                    name: 'Olomouc'
+                },
+                {
+                    coords: [18.0101420, 49.5947645],
+                    panoramaId: 50723794,
+                    name: 'Nový Jičín'
+                },
+                {
+                    coords: [14.4743047, 48.9744512],
+                    panoramaId: 15288806,
+                    name: 'České Budějovice'
                 },
             ]
         }
@@ -87,53 +143,61 @@ Vue.component(('map-main'), {
                         let results = route.getResults();
                         let result = results.length / 1000 * 2;
 
-
+                        let pubY = this;
                         if (result >= 50) {
-                            console.log('prohral jsi o ' + (result - 50) + ' km')
+                            x.message = 'prohral jsi o ' + Math.round((result - 50)) + ' km';
 
                             const znacka = JAK.mel('div');
-                            const obrazek = JAK.mel('img', { src: SMap.CONFIG.img + '/marker/drop-red.png' }, { opacity: '0' });
-                        
+                            const obrazek = JAK.mel('img', {
+                                src: SMap.CONFIG.img + '/marker/drop-red.png'
+                            }, {
+                                opacity: '0'
+                            });
+
                             znacka.appendChild(obrazek);
-                        
+
                             //const text = JAK.mel('p', { innerT: 'assets/logo/mark.svg' }, { width: '30px', bottom: '-15px', position: 'absolute' });
 
-                            const text = document.createTextNode('prohral jsi o ' + (result - 50) + ' km')
+                            const text = document.createTextNode('prohral jsi o ' + Math.round((result - 50)) + ' km')
 
                             const popisek = JAK.mel(
-                              'div',
-                              {
-                                position: 'relative',
-                                alignItems: 'center', justifyContent: 'center', borderRadius: '5px',
-                                display: 'flex', background: 'rgb(255, 255, 255)', width: '150px',
-                                height: '90px', boxShadow: 'rgba(0, 0, 0, 0.43) 0px 0px 14px 0px'
-                              }
+                                'div', {
+                                    position: 'relative',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    borderRadius: '5px',
+                                    display: 'flex',
+                                    background: 'rgb(255, 255, 255)',
+                                    width: '150px',
+                                    height: '90px',
+                                    boxShadow: 'rgba(0, 0, 0, 0.43) 0px 0px 14px 0px'
+                                }
                             );
                             popisek.appendChild(text);
                             znacka.appendChild(popisek);
 
-                            const vrstva = new SMap.Layer.Marker();
-                            m.addLayer(vrstva);
-                            vrstva.enable();
-                        
+                            const vrstvaMarker = new SMap.Layer.Marker();
+                            m.addLayer(vrstvaMarker);
+                            vrstvaMarker.enable();
 
-                            var halfPoints = results.geometry.length / 2;
+                            x.actualMarker = vrstvaMarker;
 
-                            console.log(results.geometry[halfPoints])
-
+                            var halfPoints = Math.round(results.geometry.length / 2);
 
                             var halfCoords = SMap.Coords.fromWGS84(results.geometry[halfPoints].x, results.geometry[halfPoints].y)
 
-                            const marker = new SMap.Marker(halfCoords, null, { url: znacka });
+                            const marker = new SMap.Marker(halfCoords, null, {
+                                url: znacka
+                            });
 
 
-                            vrstva.addMarker(marker);
+                            vrstvaMarker.addMarker(marker);
 
                         } else {
-                            console.log('vyhral jsi, ale bylo to těsný kdybys minul o' + (50 - result) + ' km, prohral by jsi')
-
-
+                            x.message = 'vyhral jsi, ale bylo to těsný kdybys minul o ' + Math.round((50 - result)) + ' km, prohral by jsi';
                         }
+
+                        x.resultCity = x.mapPoints[x.index].name;
                         setTimeout(() => {
                             x.index += 1;
 
@@ -147,16 +211,19 @@ Vue.component(('map-main'), {
                                 alert('Panorama se nepodařilo zobrazit !');
                             });
 
+                            x.message = 'Kde to asi je?'
+                            x.resultCity = '?????';
 
                             m.removeLayer(x.actualLayer);
+                            m.removeLayer(x.actualMarker);
                             x.actualLayer == null;
+                            x.actualMarker == null;
                             setTimeout(() => {
                                 x.showed = !x.showed;
                             }, 5000);
                         }, 5000);
                     });
                 }
-
                 var signals = m.getSignals();
                 signals.addListener(window, "map-click", kliknuto);
             }, 5000);
