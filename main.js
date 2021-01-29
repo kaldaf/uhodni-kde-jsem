@@ -163,7 +163,7 @@ Vue.component(('map-main'), {
                         let pubY = this;
                         if (result >= x.mapPoints[x.index].radius) {
                             x.message = 'Netrefil jsi město o ' + Math.round((result - x.mapPoints[x.index].radius)) + ' km';
-
+                            console.log('netrefil jsi se')
                             const znacka = JAK.mel('div');
                             const obrazek = JAK.mel('img', {
                                 src: SMap.CONFIG.img + '/marker/drop-red.png'
@@ -218,8 +218,13 @@ Vue.component(('map-main'), {
 
                             vrstvaMarker.addMarker(marker);
                         } else {
+                            console.log('trefil jsi se')
                             x.message = 'Trefil jsi město, ale bylo to těsný kdybys minul o ' + Math.round(x.mapPoints[x.index].radius) + ' km, netrefil by jsi se!';
                             x.score.push(x.mapPoints[x.index].radius / 10)
+
+                            var rightCoords = SMap.Coords.fromWGS84(x.mapPoints[x.index].coords[0], x.mapPoints[x.index].coords[1])
+
+                            m.setCenterZoom(rightCoords, 14, true);
                         }
                         x.resultCity = x.mapPoints[x.index].name;
                         setTimeout(() => {
@@ -238,14 +243,14 @@ Vue.component(('map-main'), {
                             x.resultCity = '?????';
 
                             m.removeLayer(x.actualLayer);
-                            if (x.actualMarker != null) {
+                            if (x.actualMarker !== null) {
                                 m.removeLayer(x.actualMarker);
                             }
 
                             m.setCenterZoom(czechCenter, 8, true);
 
-                            x.actualLayer == null;
-                            x.actualMarker == null;
+                            x.actualLayer = null;
+                            x.actualMarker = null;
                             setTimeout(() => {
                                 x.showed = !x.showed;
                             }, 5000);
