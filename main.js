@@ -32,57 +32,68 @@ Vue.component(('map-main'), {
             mapPoints: [{
                     coords: [16.3109993, 49.8705186],
                     panoramaId: 59070154,
-                    name: 'Litomyšl'
+                    name: 'Litomyšl',
+                    radius: 15
                 },
                 {
                     coords: [16.6111074, 49.9119302],
                     panoramaId: 58098546,
-                    name: 'Lanškroun'
+                    name: 'Lanškroun',
+                    radius: 30
                 },
                 {
                     coords: [15.8327123, 50.2090749],
                     panoramaId: 68669620,
-                    name: 'Hradec Králové'
+                    name: 'Hradec Králové',
+                    radius: 15
                 },
                 {
                     coords: [16.4680344, 49.7562868],
                     panoramaId: 59262006,
-                    name: 'Svitavy'
+                    name: 'Svitavy',
+                    radius: 30
                 },
                 {
                     coords: [16.2659757, 49.7143888],
                     panoramaId: 59204394,
-                    name: 'Polička'
+                    name: 'Polička',
+                    radius: 30
                 },
                 {
                     coords: [15.7792888, 50.0384971],
                     panoramaId: 68222468,
-                    name: 'Pardubice'
+                    name: 'Pardubice',
+                    radius: 10
                 },
                 {
                     coords: [14.4213925, 50.0875035],
                     panoramaId: 68069556,
-                    name: 'Staroměstské náměstí'
+                    name: 'Staroměstské náměstí',
+                    radius: 5
                 },
                 {
                     coords: [12.8663186, 50.2302053],
                     panoramaId: 54970771,
-                    name: 'Karlovy Vary'
+                    name: 'Karlovy Vary',
+                    radius: 30
                 },
                 {
                     coords: [17.3080903, 49.5596208],
                     panoramaId: 15288806,
-                    name: 'Olomouc'
+                    name: 'Olomouc',
+                    radius: 30
                 },
                 {
                     coords: [18.0101420, 49.5947645],
                     panoramaId: 50723794,
-                    name: 'Nový Jičín'
+                    name: 'Nový Jičín',
+                    radius: 30
                 },
                 {
                     coords: [14.4743047, 48.9744512],
                     panoramaId: 15288806,
-                    name: 'České Budějovice'
+                    name: 'České Budějovice',
+                    radius: 30
                 },
             ]
         }
@@ -100,12 +111,11 @@ Vue.component(('map-main'), {
         window.addEventListener('load', function () {
 
             var m;
-            var center;
+            var czechCenter = SMap.Coords.fromWGS84(15.4075142, 49.7919411);;
             var panoramaScene = new SMap.Pano.Scene(document.querySelector(".panorama"));
 
             setTimeout(() => {
-                center = SMap.Coords.fromWGS84(15.4075142, 49.7919411);
-                m = new SMap(JAK.gel("main-map"), center, 8);
+                m = new SMap(JAK.gel("main-map"), czechCenter, 8);
                 m.addDefaultLayer(SMap.DEF_BASE).enable();
                 m.addDefaultControls();
 
@@ -113,6 +123,7 @@ Vue.component(('map-main'), {
                     var event = signal.data.event;
                     var coords = SMap.Coords.fromEvent(event, m);
                     new SMap.Geocoder.Reverse(coords, odpoved);
+
                 }
 
                 var odpoved = function (geocoder) {
@@ -144,8 +155,8 @@ Vue.component(('map-main'), {
                         let result = results.length / 1000 * 2;
 
                         let pubY = this;
-                        if (result >= 50) {
-                            x.message = 'prohral jsi o ' + Math.round((result - 50)) + ' km';
+                        if (result >= x.mapPoints[x.index].radius) {
+                            x.message = 'Netrefil jsi město o ' + Math.round((result - x.mapPoints[x.index].radius)) + ' km';
 
                             const znacka = JAK.mel('div');
                             const obrazek = JAK.mel('img', {
@@ -158,14 +169,19 @@ Vue.component(('map-main'), {
 
                             //const text = JAK.mel('p', { innerT: 'assets/logo/mark.svg' }, { width: '30px', bottom: '-15px', position: 'absolute' });
 
-                            const text = document.createTextNode('prohral jsi o ' + Math.round((result - 50)) + ' km')
+                            //const text = document.createTextNode('Netrefil jsi město o ' + Math.round((result - x.mapPoints[x.index].radius)) + ' km')
 
                             const popisek = JAK.mel(
                                 'div', {
+                                    innerText: 'Netrefil jsi město o ' + Math.round((result - x.mapPoints[x.index].radius)) + ' km'
+                                }, {
                                     position: 'relative',
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     borderRadius: '5px',
+                                    padding: '8px 1rem',
+                                    left: '-4rem',
+                                    top: '-4rem',
                                     display: 'flex',
                                     background: 'rgb(255, 255, 255)',
                                     width: '150px',
@@ -173,7 +189,7 @@ Vue.component(('map-main'), {
                                     boxShadow: 'rgba(0, 0, 0, 0.43) 0px 0px 14px 0px'
                                 }
                             );
-                            popisek.appendChild(text);
+                            //popisek.appendChild(text);
                             znacka.appendChild(popisek);
 
                             const vrstvaMarker = new SMap.Layer.Marker();
@@ -186,6 +202,9 @@ Vue.component(('map-main'), {
 
                             var halfCoords = SMap.Coords.fromWGS84(results.geometry[halfPoints].x, results.geometry[halfPoints].y)
 
+                            m.setCenterZoom(halfCoords, 10, true);
+
+
                             const marker = new SMap.Marker(halfCoords, null, {
                                 url: znacka
                             });
@@ -194,7 +213,7 @@ Vue.component(('map-main'), {
                             vrstvaMarker.addMarker(marker);
 
                         } else {
-                            x.message = 'vyhral jsi, ale bylo to těsný kdybys minul o ' + Math.round((50 - result)) + ' km, prohral by jsi';
+                            x.message = 'Trefil jsi město, ale bylo to těsný kdybys minul o ' + Math.round(x.mapPoints[x.index].radius) + ' km, netrefil by jsi se!';
                         }
 
                         x.resultCity = x.mapPoints[x.index].name;
@@ -215,7 +234,12 @@ Vue.component(('map-main'), {
                             x.resultCity = '?????';
 
                             m.removeLayer(x.actualLayer);
-                            m.removeLayer(x.actualMarker);
+                            if (x.actualMarker != null) {
+                                m.removeLayer(x.actualMarker);
+                            }
+                            
+                            m.setCenterZoom(czechCenter, 8, true);
+
                             x.actualLayer == null;
                             x.actualMarker == null;
                             setTimeout(() => {
