@@ -3,7 +3,7 @@ Zábavná hra, kde se načte mapa, z obrázku musíme uhodnout, kde se zhruba m�
 
 https://uhodni-kde-jsem.vercel.app/
 
-##Bugs:
+## Bugs:
 
 * vypočítaná trasa je pozemní nýbrž letecká, tím pádem zvolený bod nemusí odpovídat letecké hodnotě "vzdušnou čarou"
 
