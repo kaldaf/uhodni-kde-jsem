@@ -29,7 +29,7 @@ Vue.component(('map-main'), {
         return {
             showed: false,
             score: [],
-            index: null,
+            index: 0,
             selectedCoords: [],
             actualLayer: null,
             actualMarker: null,
@@ -84,8 +84,8 @@ Vue.component(('map-main'), {
                     radius: 30
                 },
                 {
-                    coords: [17.3080903, 49.5596208],
-                    panoramaId: 15288806,
+                    coords: [17.3080903, 49.5596000],
+                    panoramaId: 58879911,
                     name: 'Olomouc',
                     radius: 30
                 },
@@ -96,8 +96,8 @@ Vue.component(('map-main'), {
                     radius: 30
                 },
                 {
-                    coords: [14.4743047, 48.9744512],
-                    panoramaId: 15288806,
+                    coords: [14.4750107, 48.9742668],
+                    panoramaId: 57177087,
                     name: 'České Budějovice',
                     radius: 30
                 },
@@ -105,8 +105,6 @@ Vue.component(('map-main'), {
         }
     },
     created() {
-        this.index = 0;
-
         setTimeout(() => {
             this.showed = true;
         }, 5000);
