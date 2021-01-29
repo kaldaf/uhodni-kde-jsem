@@ -7,6 +7,24 @@ Vue.component(('map-main'), {
                 <div class="mapa" id="main-map"></div>
                 <div class="panaroma" id="main-pan"></div>
             </div>
+            <div v-if="gameOver" class="over">
+
+                <div class="results">
+                    <h2>Tvé skóre: {{ actualScore }} z {{maximumScore}}</h2>
+                    <p>Uhádnutá města:</p>
+                    <ul>
+                        <li v-for="guessed in guessedCities">
+                            {{guessed}}
+                        </li>
+                    </ul>
+                    <p>Neuhádnutá města:</p>
+                    <ul>
+                        <li v-for="unreleased in unreleasedCities">
+                            {{unreleased}}
+                        </li>
+                    </ul>
+                </div>
+            </div>
             <div class="side-wrapper">
                 <div class="informations">
                     <h3>Informační panel</h3>
@@ -19,8 +37,14 @@ Vue.component(('map-main'), {
                     </div>
                 </div>
                 <div class="copy">
-                    <p>vytvořilo</p>
-                    <a href="https://twentio.cz"><img src="https://twentio.cz/assets/logo/logo.svg"></a>
+                    <div class="content-copy">
+                        <p>vytvořilo</p>
+                        <a href="https://twentio.cz"><img src="https://twentio.cz/assets/logo/logo.svg"></a>
+                    </div>
+                    <div class="content-copy">
+                        <p>za pomoci</p>
+                        <a href="https://mapy.cz"><img src="https://api.mapy.cz/img/api/logo.svg"></a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -35,6 +59,9 @@ Vue.component(('map-main'), {
             actualMarker: null,
             message: '',
             circleLayer: null,
+            gameOver: false,
+            guessedCities: [],
+            unreleasedCities: [],
             resultCity: '???',
             mapPoints: [{
                     coords: [16.3109993, 49.8705186],
@@ -121,217 +148,228 @@ Vue.component(('map-main'), {
                 nav: false
             });
 
-            setTimeout(() => {
-                m = new SMap(JAK.gel("main-map"), czechCenter, 8);
-                m.addDefaultLayer(SMap.DEF_BASE).enable();
-                m.addDefaultControls();
+            if (x.mapPoints.length - 1 >= x.index) {
+                setTimeout(() => {
+                    m = new SMap(JAK.gel("main-map"), czechCenter, 8);
+                    m.addDefaultLayer(SMap.DEF_BASE).enable();
+                    m.addDefaultControls();
 
-                var kliknuto = function (signal) {
-                    if (x.actualLayer == null) {
+                    var kliknuto = function (signal) {
+                        if (x.actualLayer == null) {
 
-                        var event = signal.data.event;
-                        var coords = SMap.Coords.fromEvent(event, m);
-                        new SMap.Geocoder.Reverse(coords, odpoved);
-                    }
-                }
-
-                var odpoved = function (geocoder) {
-                    var results = geocoder.getResults();
-                    x.selectedCoords = [results.coords.x, results.coords.y]
-
-                    var coords = [
-                        SMap.Coords.fromWGS84(x.selectedCoords[0], x.selectedCoords[1]),
-                        SMap.Coords.fromWGS84(x.mapPoints[x.index].coords[0], x.mapPoints[x.index].coords[1])
-                    ];
-
-                    var nalezeno = function (route) {
-                        var vrstva = new SMap.Layer.Geometry();
-                        m.addLayer(vrstva).enable();
-
-                        var coords = route.getResults().geometry;
-                        var g = new SMap.Geometry(SMap.GEOMETRY_POLYLINE, null, coords);
-                        vrstva.addGeometry(g);
-                        x.actualLayer = vrstva;
-                    }
-
-                    // nove volani - staticka metoda, predame pole se souradnicemi a chceme vratit hlavne geometrii trasy
-                    SMap.Route.route(coords, {
-                        geometry: true,
-                        criterion: "fast"
-                    }).then(nalezeno);
-
-                    new SMap.Route(coords, function (route) {
-                        let results = route.getResults();
-                        let result = results.length / 1000 * 2;
-
-                        if (result >= x.mapPoints[x.index].radius) {
-                            x.message = 'Netrefil jsi město o ' + Math.round((result - x.mapPoints[x.index].radius)) + ' km';
-                            console.log('netrefil jsi se')
-                            const znacka = JAK.mel('div');
-                            const obrazek = JAK.mel('img', {
-                                src: SMap.CONFIG.img + '/marker/drop-red.png'
-                            }, {
-                                opacity: '0'
-                            });
-
-                            znacka.appendChild(obrazek);
-
-                            //const text = JAK.mel('p', { innerT: 'assets/logo/mark.svg' }, { width: '30px', bottom: '-15px', position: 'absolute' });
-
-                            //const text = document.createTextNode('Netrefil jsi město o ' + Math.round((result - x.mapPoints[x.index].radius)) + ' km')
-
-                            const popisek = JAK.mel(
-                                'div', {
-                                    innerText: 'Netrefil jsi město o ' + Math.round((result - x.mapPoints[x.index].radius)) + ' km'
-                                }, {
-                                    position: 'relative',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    borderRadius: '5px',
-                                    padding: '8px 1rem',
-                                    left: '-4rem',
-                                    top: '-4rem',
-                                    display: 'flex',
-                                    background: 'rgb(255, 255, 255)',
-                                    width: '150px',
-                                    height: '90px',
-                                    boxShadow: 'rgba(0, 0, 0, 0.43) 0px 0px 14px 0px'
-                                }
-                            );
-                            //popisek.appendChild(text);
-                            znacka.appendChild(popisek);
-
-                            const vrstvaMarker = new SMap.Layer.Marker();
-                            m.addLayer(vrstvaMarker);
-                            vrstvaMarker.enable();
-
-                            x.actualMarker = vrstvaMarker;
-
-                            var halfPoints = Math.round(results.geometry.length / 2);
-
-                            var halfCoords = SMap.Coords.fromWGS84(results.geometry[halfPoints].x, results.geometry[halfPoints].y)
-
-                            m.setCenterZoom(halfCoords, 10, true);
-
-
-                            const marker = new SMap.Marker(halfCoords, null, {
-                                url: znacka
-                            });
-                            vrstvaMarker.addMarker(marker);
-
-                            var layerCircle = new SMap.Layer.Geometry();
-                            m.addLayer(layerCircle);
-                            layerCircle.enable();
-
-                            /* vypocet souradnic bodu na kruznici  */
-                            var radius = x.mapPoints[x.index].radius; /* polomer v km */
-
-                            var lon = x.mapPoints[x.index].coords[0];
-                            var lat = x.mapPoints[x.index].coords[1];
-
-                            const equator = 6378 * 2 * Math.PI; /* delka rovniku (km) */
-                            var yrad = Math.PI * lat / 180; /* zemepisna sirka v radianech */
-                            var line = equator * Math.cos(yrad); /* delka rovnobezky (km) na ktere lezi stred kruznice */
-                            var angle = 360 * radius / line; /* o tento uhel se po rovnobezce posuneme */
-
-                            var centerCircle = SMap.Coords.fromWGS84(lon, lat);
-
-                            // modrá kružnice (s dvojnásobným poloměrem)
-                            var point = SMap.Coords.fromWGS84(lon + angle, lat);
-                            var options = {
-                                color: "#f00",
-                                opacity: 0.1,
-                                outlineColor: "#f00",
-                                outlineOpacity: 0.5,
-                                outlineWidth: 3
-                            };
-                            var circle = new SMap.Geometry(SMap.GEOMETRY_CIRCLE, null, [centerCircle, point], options);
-                            layerCircle.addGeometry(circle);
-                            x.circleLayer = layerCircle;
-
-
-
-                        } else {
-                            console.log('trefil jsi se')
-                            x.message = 'Trefil jsi město, ale bylo to těsný kdybys minul o ' + Math.round(x.mapPoints[x.index].radius) + ' km, netrefil by jsi se!';
-                            x.score.push(x.mapPoints[x.index].radius / 10)
-
-                            var rightCoords = SMap.Coords.fromWGS84(x.mapPoints[x.index].coords[0], x.mapPoints[x.index].coords[1])
-
-
-
-                            var layer = new SMap.Layer.Geometry();
-                            m.addLayer(layer);
-                            layer.enable();
-
-                            /* vypocet souradnic bodu na kruznici  */
-                            var radius = x.mapPoints[x.index].radius; /* polomer v km */
-
-                            var lon = x.mapPoints[x.index].coords[0];
-                            var lat = x.mapPoints[x.index].coords[1];
-
-                            const equator = 6378 * 2 * Math.PI; /* delka rovniku (km) */
-                            var yrad = Math.PI * lat / 180; /* zemepisna sirka v radianech */
-                            var line = equator * Math.cos(yrad); /* delka rovnobezky (km) na ktere lezi stred kruznice */
-                            var angle = 360 * radius / line; /* o tento uhel se po rovnobezce posuneme */
-
-                            var centerCircle = SMap.Coords.fromWGS84(lon, lat);
-
-                            // modrá kružnice (s dvojnásobným poloměrem)
-                            var point = SMap.Coords.fromWGS84(lon + angle, lat);
-                            var options = {
-                                color: "blue",
-                                opacity: 0.1,
-                                outlineColor: "blue",
-                                outlineOpacity: 0.5,
-                                outlineWidth: 3
-                            };
-                            var circle = new SMap.Geometry(SMap.GEOMETRY_CIRCLE, null, [centerCircle, point], options);
-                            layer.addGeometry(circle);
-                            x.circleLayer = layer;
-
-
-
-
-                            m.setCenterZoom(rightCoords, 14, true);
+                            var event = signal.data.event;
+                            var coords = SMap.Coords.fromEvent(event, m);
+                            new SMap.Geocoder.Reverse(coords, odpoved);
                         }
-                        x.resultCity = x.mapPoints[x.index].name;
-                        setTimeout(() => {
-                            x.index += 1;
-                            x.showed = !x.showed;
+                    }
 
-                            SMap.Pano.get(x.mapPoints[x.index].panoramaId).then((place) => panoramaScene.show(place, {
-                                yaw: 2.35,
-                                fov: 1,
-                                pitch: -0.214,
-                            }), () => {
-                                alert('Panorama se nepodařilo zobrazit !');
-                            });
+                    var odpoved = function (geocoder) {
+                        var results = geocoder.getResults();
+                        x.selectedCoords = [results.coords.x, results.coords.y]
 
-                            x.message = 'Kde to asi je?'
-                            x.resultCity = '?????';
+                        var coords = [
+                            SMap.Coords.fromWGS84(x.selectedCoords[0], x.selectedCoords[1]),
+                            SMap.Coords.fromWGS84(x.mapPoints[x.index].coords[0], x.mapPoints[x.index].coords[1])
+                        ];
 
-                            m.removeLayer(x.actualLayer);
-                            m.removeLayer(x.circleLayer);
-                            if (x.actualMarker !== null) {
-                                m.removeLayer(x.actualMarker);
+                        var nalezeno = function (route) {
+                            var vrstva = new SMap.Layer.Geometry();
+                            m.addLayer(vrstva).enable();
+
+                            var coords = route.getResults().geometry;
+                            var g = new SMap.Geometry(SMap.GEOMETRY_POLYLINE, null, coords);
+                            vrstva.addGeometry(g);
+                            x.actualLayer = vrstva;
+                        }
+
+                        // nove volani - staticka metoda, predame pole se souradnicemi a chceme vratit hlavne geometrii trasy
+                        SMap.Route.route(coords, {
+                            geometry: true,
+                            criterion: "fast"
+                        }).then(nalezeno);
+
+                        new SMap.Route(coords, function (route) {
+                            let results = route.getResults();
+                            let result = results.length / 1000 * 2;
+
+                            if (result >= x.mapPoints[x.index].radius) {
+                                x.message = 'Netrefil jsi město o ' + Math.round((result - x.mapPoints[x.index].radius)) + ' km';
+                                console.log('netrefil jsi se')
+                                const znacka = JAK.mel('div');
+                                const obrazek = JAK.mel('img', {
+                                    src: SMap.CONFIG.img + '/marker/drop-red.png'
+                                }, {
+                                    opacity: '0'
+                                });
+
+                                znacka.appendChild(obrazek);
+
+                                //const text = JAK.mel('p', { innerT: 'assets/logo/mark.svg' }, { width: '30px', bottom: '-15px', position: 'absolute' });
+
+                                //const text = document.createTextNode('Netrefil jsi město o ' + Math.round((result - x.mapPoints[x.index].radius)) + ' km')
+
+                                const popisek = JAK.mel(
+                                    'div', {
+                                        innerText: 'Netrefil jsi město o ' + Math.round((result - x.mapPoints[x.index].radius)) + ' km'
+                                    }, {
+                                        position: 'relative',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        borderRadius: '5px',
+                                        padding: '8px 1rem',
+                                        left: '-4rem',
+                                        top: '-4rem',
+                                        display: 'flex',
+                                        background: 'rgb(255, 255, 255)',
+                                        width: '150px',
+                                        height: '90px',
+                                        boxShadow: 'rgba(0, 0, 0, 0.43) 0px 0px 14px 0px'
+                                    }
+                                );
+                                //popisek.appendChild(text);
+                                znacka.appendChild(popisek);
+
+                                const vrstvaMarker = new SMap.Layer.Marker();
+                                m.addLayer(vrstvaMarker);
+                                vrstvaMarker.enable();
+
+                                x.actualMarker = vrstvaMarker;
+
+                                var halfPoints = Math.round(results.geometry.length / 2);
+
+                                var halfCoords = SMap.Coords.fromWGS84(results.geometry[halfPoints].x, results.geometry[halfPoints].y)
+
+                                m.setCenterZoom(halfCoords, 10, true);
+
+
+                                const marker = new SMap.Marker(halfCoords, null, {
+                                    url: znacka
+                                });
+                                vrstvaMarker.addMarker(marker);
+
+                                var layerCircle = new SMap.Layer.Geometry();
+                                m.addLayer(layerCircle);
+                                layerCircle.enable();
+
+                                /* vypocet souradnic bodu na kruznici  */
+                                var radius = x.mapPoints[x.index].radius; /* polomer v km */
+
+                                var lon = x.mapPoints[x.index].coords[0];
+                                var lat = x.mapPoints[x.index].coords[1];
+
+                                const equator = 6378 * 2 * Math.PI; /* delka rovniku (km) */
+                                var yrad = Math.PI * lat / 180; /* zemepisna sirka v radianech */
+                                var line = equator * Math.cos(yrad); /* delka rovnobezky (km) na ktere lezi stred kruznice */
+                                var angle = 360 * radius / line; /* o tento uhel se po rovnobezce posuneme */
+
+                                var centerCircle = SMap.Coords.fromWGS84(lon, lat);
+
+                                // modrá kružnice (s dvojnásobným poloměrem)
+                                var point = SMap.Coords.fromWGS84(lon + angle, lat);
+                                var options = {
+                                    color: "#f00",
+                                    opacity: 0.1,
+                                    outlineColor: "#f00",
+                                    outlineOpacity: 0.5,
+                                    outlineWidth: 3
+                                };
+                                var circle = new SMap.Geometry(SMap.GEOMETRY_CIRCLE, null, [centerCircle, point], options);
+                                layerCircle.addGeometry(circle);
+                                x.circleLayer = layerCircle;
+
+                                x.unreleasedCities.push(x.mapPoints[x.index].name);
+
+                            } else {
+                                console.log('trefil jsi se')
+                                x.message = 'Trefil jsi město, ale bylo to těsný kdybys minul o ' + Math.round(x.mapPoints[x.index].radius) + ' km, netrefil by jsi se!';
+                                x.score.push(x.mapPoints[x.index].radius / 10)
+
+                                x.guessedCities.push(x.mapPoints[x.index].name);
+
+                                var rightCoords = SMap.Coords.fromWGS84(x.mapPoints[x.index].coords[0], x.mapPoints[x.index].coords[1])
+
+
+
+                                var layer = new SMap.Layer.Geometry();
+                                m.addLayer(layer);
+                                layer.enable();
+
+                                /* vypocet souradnic bodu na kruznici  */
+                                var radius = x.mapPoints[x.index].radius; /* polomer v km */
+
+                                var lon = x.mapPoints[x.index].coords[0];
+                                var lat = x.mapPoints[x.index].coords[1];
+
+                                const equator = 6378 * 2 * Math.PI; /* delka rovniku (km) */
+                                var yrad = Math.PI * lat / 180; /* zemepisna sirka v radianech */
+                                var line = equator * Math.cos(yrad); /* delka rovnobezky (km) na ktere lezi stred kruznice */
+                                var angle = 360 * radius / line; /* o tento uhel se po rovnobezce posuneme */
+
+                                var centerCircle = SMap.Coords.fromWGS84(lon, lat);
+
+                                // modrá kružnice (s dvojnásobným poloměrem)
+                                var point = SMap.Coords.fromWGS84(lon + angle, lat);
+                                var options = {
+                                    color: "blue",
+                                    opacity: 0.1,
+                                    outlineColor: "blue",
+                                    outlineOpacity: 0.5,
+                                    outlineWidth: 3
+                                };
+                                var circle = new SMap.Geometry(SMap.GEOMETRY_CIRCLE, null, [centerCircle, point], options);
+                                layer.addGeometry(circle);
+                                x.circleLayer = layer;
+
+
+
+
+                                m.setCenterZoom(rightCoords, 14, true);
                             }
-
-                            m.setCenterZoom(czechCenter, 8, true);
-
-                            x.actualLayer = null;
-                            x.actualMarker = null;
+                            x.resultCity = x.mapPoints[x.index].name;
                             setTimeout(() => {
-                                x.showed = !x.showed;
-                            }, 5000);
-                        }, 5000);
-                    });
-                }
-                var signals = m.getSignals();
-                signals.addListener(window, "map-click", kliknuto);
-                m.setCursor("pointer");
-            }, 5000);
+                                if (x.mapPoints.length - 2 >= x.index) {
 
+                                    setTimeout(() => {
+                                        x.index += 1;
+                                        x.showed = !x.showed;
+
+                                        SMap.Pano.get(x.mapPoints[x.index].panoramaId).then((place) => panoramaScene.show(place, {
+                                            yaw: 2.35,
+                                            fov: 1,
+                                            pitch: -0.214,
+                                        }), () => {
+                                            alert('Panorama se nepodařilo zobrazit !');
+                                        });
+
+
+                                        x.message = 'Kde to asi je?'
+                                        x.resultCity = '?????';
+
+                                        m.removeLayer(x.actualLayer);
+                                        m.removeLayer(x.circleLayer);
+                                        if (x.actualMarker !== null) {
+                                            m.removeLayer(x.actualMarker);
+                                        }
+
+                                        m.setCenterZoom(czechCenter, 8, true);
+
+                                        x.actualLayer = null;
+                                        x.actualMarker = null;
+                                        setTimeout(() => {
+                                            x.showed = !x.showed;
+                                        }, 5000);
+                                    }, 5000);
+                                } else {
+                                    x.gameOver = true;
+                                }
+                            }, 5000);
+                        });
+                    }
+                    var signals = m.getSignals();
+                    signals.addListener(window, "map-click", kliknuto);
+                    m.setCursor("pointer");
+                }, 5000);
+            }
 
             SMap.Pano.get(x.mapPoints[x.index].panoramaId).then((place) => panoramaScene.show(place, {
                 yaw: 2.35,
