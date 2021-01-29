@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="cs">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hadej</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://api.mapy.cz/loader.js"></script>
+    <script>
+        Loader.load(null, {
+            pano: true
+        });
+    </script>
+</head>
+
+<body>
+    <div id="app">
+        <div class="message">
+            <div class="content">
+                <div>
+                    prohlídni si místo (5s) a potom vyber místo na mapě
+                </div>
+                <div>
+                    stav: {{this.message}}
+                </div>
+            </div>
+        </div>
+        <map-main></map-main>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script>
+    <script src="main.js"></script>
+</body>
+
+</html>

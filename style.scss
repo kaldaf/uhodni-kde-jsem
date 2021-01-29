@@ -1,0 +1,53 @@
+*,
+:after,
+:before {
+    padding: 0;
+    margin: 0;
+}
+
+body {
+    margin: 0;
+    background: #f5f5f5;
+}
+
+.message {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .content {
+        background: #fff;
+        position: relative;
+        z-index: 11;
+        padding: 3rem;
+        font-family: Comic Sans MS;
+        margin-top: 2rem;
+    }
+}
+
+.maps {
+    position: relative;
+    height: 100vh;
+
+    .mapa {
+        height: 0;
+    }
+
+    .panorama {
+        height: 100%;
+    }
+
+    &.showed {
+        .mapa {
+            height: 100vh;
+        }
+
+        .panorama {
+            height: 0;
+        }
+    }
+}
