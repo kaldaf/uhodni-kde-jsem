@@ -5,7 +5,7 @@ Vue.component(('map-main'), {
         <div class="app-data">
             <div class="maps" v-bind:class="{ showed: showed }">
                 <div class="mapa" id="main-map"></div>
-                <div class="panorama"></div>
+                <div class="panaroma" id="main-pan"></div>
             </div>
             <div class="side-wrapper">
                 <div class="informations">
@@ -34,6 +34,7 @@ Vue.component(('map-main'), {
             actualLayer: null,
             actualMarker: null,
             message: '',
+            circleLayer: null,
             resultCity: '???',
             mapPoints: [{
                     coords: [16.3109993, 49.8705186],
@@ -116,7 +117,9 @@ Vue.component(('map-main'), {
 
             var m;
             var czechCenter = SMap.Coords.fromWGS84(15.4075142, 49.7919411);;
-            var panoramaScene = new SMap.Pano.Scene(document.querySelector(".panorama"));
+            var panoramaScene = new SMap.Pano.Scene(document.getElementById("main-pan"), {
+                nav: false
+            });
 
             setTimeout(() => {
                 m = new SMap(JAK.gel("main-map"), czechCenter, 8);
@@ -158,7 +161,6 @@ Vue.component(('map-main'), {
                         let results = route.getResults();
                         let result = results.length / 1000 * 2;
 
-                        let pubY = this;
                         if (result >= x.mapPoints[x.index].radius) {
                             x.message = 'Netrefil jsi město o ' + Math.round((result - x.mapPoints[x.index].radius)) + ' km';
                             console.log('netrefil jsi se')
@@ -212,15 +214,81 @@ Vue.component(('map-main'), {
                             const marker = new SMap.Marker(halfCoords, null, {
                                 url: znacka
                             });
-
-
                             vrstvaMarker.addMarker(marker);
+
+                            var layerCircle = new SMap.Layer.Geometry();
+                            m.addLayer(layerCircle);
+                            layerCircle.enable();
+
+                            /* vypocet souradnic bodu na kruznici  */
+                            var radius = x.mapPoints[x.index].radius; /* polomer v km */
+
+                            var lon = x.mapPoints[x.index].coords[0];
+                            var lat = x.mapPoints[x.index].coords[1];
+
+                            const equator = 6378 * 2 * Math.PI; /* delka rovniku (km) */
+                            var yrad = Math.PI * lat / 180; /* zemepisna sirka v radianech */
+                            var line = equator * Math.cos(yrad); /* delka rovnobezky (km) na ktere lezi stred kruznice */
+                            var angle = 360 * radius / line; /* o tento uhel se po rovnobezce posuneme */
+
+                            var centerCircle = SMap.Coords.fromWGS84(lon, lat);
+
+                            // modrá kružnice (s dvojnásobným poloměrem)
+                            var point = SMap.Coords.fromWGS84(lon + angle, lat);
+                            var options = {
+                                color: "#f00",
+                                opacity: 0.1,
+                                outlineColor: "#f00",
+                                outlineOpacity: 0.5,
+                                outlineWidth: 3
+                            };
+                            var circle = new SMap.Geometry(SMap.GEOMETRY_CIRCLE, null, [centerCircle, point], options);
+                            layerCircle.addGeometry(circle);
+                            x.circleLayer = layerCircle;
+
+
+
                         } else {
                             console.log('trefil jsi se')
                             x.message = 'Trefil jsi město, ale bylo to těsný kdybys minul o ' + Math.round(x.mapPoints[x.index].radius) + ' km, netrefil by jsi se!';
                             x.score.push(x.mapPoints[x.index].radius / 10)
 
                             var rightCoords = SMap.Coords.fromWGS84(x.mapPoints[x.index].coords[0], x.mapPoints[x.index].coords[1])
+
+
+
+                            var layer = new SMap.Layer.Geometry();
+                            m.addLayer(layer);
+                            layer.enable();
+
+                            /* vypocet souradnic bodu na kruznici  */
+                            var radius = x.mapPoints[x.index].radius; /* polomer v km */
+
+                            var lon = x.mapPoints[x.index].coords[0];
+                            var lat = x.mapPoints[x.index].coords[1];
+
+                            const equator = 6378 * 2 * Math.PI; /* delka rovniku (km) */
+                            var yrad = Math.PI * lat / 180; /* zemepisna sirka v radianech */
+                            var line = equator * Math.cos(yrad); /* delka rovnobezky (km) na ktere lezi stred kruznice */
+                            var angle = 360 * radius / line; /* o tento uhel se po rovnobezce posuneme */
+
+                            var centerCircle = SMap.Coords.fromWGS84(lon, lat);
+
+                            // modrá kružnice (s dvojnásobným poloměrem)
+                            var point = SMap.Coords.fromWGS84(lon + angle, lat);
+                            var options = {
+                                color: "blue",
+                                opacity: 0.1,
+                                outlineColor: "blue",
+                                outlineOpacity: 0.5,
+                                outlineWidth: 3
+                            };
+                            var circle = new SMap.Geometry(SMap.GEOMETRY_CIRCLE, null, [centerCircle, point], options);
+                            layer.addGeometry(circle);
+                            x.circleLayer = layer;
+
+
+
 
                             m.setCenterZoom(rightCoords, 14, true);
                         }
@@ -241,6 +309,7 @@ Vue.component(('map-main'), {
                             x.resultCity = '?????';
 
                             m.removeLayer(x.actualLayer);
+                            m.removeLayer(x.circleLayer);
                             if (x.actualMarker !== null) {
                                 m.removeLayer(x.actualMarker);
                             }
