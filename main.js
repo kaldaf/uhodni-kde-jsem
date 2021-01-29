@@ -8,10 +8,15 @@ Vue.component(('map-main'), {
                 <div class="panorama"></div>
             </div>
             <div class="side-wrapper">
-                <div class="settings">
+                <div class="informations">
                     <h3>Informační panel</h3>
                     <p v-if="message.length > 0"><b>Výsledek</b>: {{message}}</p>
                     <p><b>Město</b>: {{resultCity}}</p>
+                    <div class="score">
+                        <p>
+                        <b>Počet bodů</b>: {{ actualScore }} z {{maximumScore}}
+                        </p>
+                    </div>
                 </div>
                 <div class="copy">
                     <p>vytvořilo</p>
@@ -23,6 +28,7 @@ Vue.component(('map-main'), {
     data() {
         return {
             showed: false,
+            score: [],
             index: null,
             selectedCoords: [],
             actualLayer: null,
@@ -211,15 +217,13 @@ Vue.component(('map-main'), {
 
 
                             vrstvaMarker.addMarker(marker);
-
                         } else {
                             x.message = 'Trefil jsi město, ale bylo to těsný kdybys minul o ' + Math.round(x.mapPoints[x.index].radius) + ' km, netrefil by jsi se!';
+                            x.score.push(x.mapPoints[x.index].radius / 10)
                         }
-
                         x.resultCity = x.mapPoints[x.index].name;
                         setTimeout(() => {
                             x.index += 1;
-
                             x.showed = !x.showed;
 
                             SMap.Pano.get(x.mapPoints[x.index].panoramaId).then((place) => panoramaScene.show(place, {
@@ -237,7 +241,7 @@ Vue.component(('map-main'), {
                             if (x.actualMarker != null) {
                                 m.removeLayer(x.actualMarker);
                             }
-                            
+
                             m.setCenterZoom(czechCenter, 8, true);
 
                             x.actualLayer == null;
@@ -261,6 +265,24 @@ Vue.component(('map-main'), {
                 alert('Panorama se nepodařilo zobrazit !');
             });
         })
+    },
+    computed: {
+        actualScore: function () {
+            let sum = 0;
+            this.score.forEach(function (item) {
+                sum += (parseFloat(item));
+            });
+
+            return sum;
+        },
+        maximumScore: function () {
+            let sum = 0;
+            this.mapPoints.forEach(function (item) {
+                sum += (parseFloat(item.radius / 10));
+            });
+
+            return sum;
+        }
     },
     methods: {
         selectPlace: function () {
