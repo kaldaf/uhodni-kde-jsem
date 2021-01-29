@@ -127,10 +127,12 @@ Vue.component(('map-main'), {
                 m.addDefaultControls();
 
                 var kliknuto = function (signal) {
-                    var event = signal.data.event;
-                    var coords = SMap.Coords.fromEvent(event, m);
-                    new SMap.Geocoder.Reverse(coords, odpoved);
+                    if (x.actualLayer == null) {
 
+                        var event = signal.data.event;
+                        var coords = SMap.Coords.fromEvent(event, m);
+                        new SMap.Geocoder.Reverse(coords, odpoved);
+                    }
                 }
 
                 var odpoved = function (geocoder) {
@@ -154,7 +156,8 @@ Vue.component(('map-main'), {
 
                     // nove volani - staticka metoda, predame pole se souradnicemi a chceme vratit hlavne geometrii trasy
                     SMap.Route.route(coords, {
-                        geometry: true
+                        geometry: true,
+                        criterion: "fast"
                     }).then(nalezeno);
 
                     new SMap.Route(coords, function (route) {
