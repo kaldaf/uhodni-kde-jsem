@@ -257,6 +257,7 @@ Vue.component(('map-main'), {
                 }
                 var signals = m.getSignals();
                 signals.addListener(window, "map-click", kliknuto);
+                m.setCursor("pointer");
             }, 5000);
 
 
