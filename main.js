@@ -1,6 +1,6 @@
 /*
     Description: A game of searching for cities in the Czech Republic
-    Version: 0.0.5
+    Version: 0.1
     Author: Filip Kalousek
     Author URI: www.twentio.cz
 */
@@ -87,6 +87,7 @@ Vue.component(('map-main'), {
             circleLayer: null,
             gameOver: false,
             guessedCities: [],
+            distance: 0,
             unreleasedCities: [],
             resultCity: 'Pozorně sleduj!',
             mapPoints: [{
@@ -253,13 +254,50 @@ Vue.component(('map-main'), {
 
                         var nalezeno = function (route) {
                             //vytvorime vrstvu na ktere nam vznikne svg ktere znazornuje cestu
-                            var vrstva = new SMap.Layer.Geometry();
+                            /*var vrstva = new SMap.Layer.Geometry();
                             m.addLayer(vrstva).enable();
 
                             var coords = route.getResults().geometry;
+
                             var g = new SMap.Geometry(SMap.GEOMETRY_POLYLINE, null, coords);
-                            vrstva.addGeometry(g);
-                            x.actualLayer = vrstva;
+                            vrstva.addGeometry(g);/*/
+                
+                            //vytvorim vrstvu na rucni mereni
+                            var layerManual = new SMap.Layer.Geometry();
+                            m.addLayer(layerManual);
+                            layerManual.enable();
+
+                            //aby se mi hezky pracovalo s daty, pojmenuju si je
+                            var lon1 = x.mapPoints[x.index].coords[0];
+                            var lat1 = x.mapPoints[x.index].coords[1];
+                            var lon2 = x.selectedCoords[0];
+                            var lat2 = x.selectedCoords[1];
+
+
+                            //vzorec NE NA NAPLANOVANI TRASY ale na na vypocitani vzdalenosti mezi 2 body
+                            //viz. http://www.movable-type.co.uk/scripts/latlong.html
+                            const φ1 = lat1 * Math.PI / 180,
+                                φ2 = lat2 * Math.PI / 180,
+                                Δλ = (lon2 - lon1) * Math.PI / 180,
+                                R = 6371e3;
+                            const d = Math.acos(Math.sin(φ1) * Math.sin(φ2) + Math.cos(φ1) * Math.cos(φ2) * Math.cos(Δλ)) * R;
+                            console.log('vzdalenost je: ' + Math.round(d) / 1000 + 'km')
+
+                            var coordsManual = [
+                                SMap.Coords.fromWGS84(lon1, lat1),
+                                SMap.Coords.fromWGS84(lon2, lat2)
+                            ];
+
+                            //Vytvorim si vrstvu lajnu, bude rovna protoze ma jen 2 body
+                            //rozdil oproti naplanovani trasy kde jsou stovky bodu
+                            var manualLine = new SMap.Geometry(SMap.GEOMETRY_POLYLINE, null, coordsManual);
+                            layerManual.addGeometry(manualLine);
+
+                            //zaokrouhlim rozdil distance, vysledek je v tisicech
+                            x.distance = Math.round(d) / 1000;
+
+                            //ulozim si vrstvu, abych se ji pote mohl zbavit
+                            x.actualLayer = layerManual;
                         }
 
                         // nove volani - staticka metoda, predame pole se souradnicemi a chceme vratit hlavne geometrii trasy
@@ -276,7 +314,7 @@ Vue.component(('map-main'), {
                             let results = route.getResults();
 
                             //ziskame si pocet metru a vydelime je na km
-                            let result = results.length / 1000;
+                            let result = x.distance;
 
                             //rozhodujeme zda typ uzivatele byl v radiusu (narocnost kola)
                             if (result >= x.mapPoints[x.index].radius) {
@@ -317,10 +355,10 @@ Vue.component(('map-main'), {
                                 m.addLayer(vrstvaMarker);
                                 vrstvaMarker.enable();
 
-
                                 //pridam aktuani vrstvu do dat, abych ji potom mohl smazat
                                 x.actualMarker = vrstvaMarker;
 
+                                /*
                                 //z dat si vemu celou cestu naplanovou a vemu si kde je zhruba polovina cesty
                                 var halfPoints = Math.round(results.geometry.length / 2);
 
@@ -336,11 +374,19 @@ Vue.component(('map-main'), {
                                 });
                                 vrstvaMarker.addMarker(marker);
 
+                                */
 
-                                //vytvorim novou vrstvu na geometrii
+                               var cityCoords = SMap.Coords.fromWGS84(x.mapPoints[x.index].coords[0], x.mapPoints[x.index].coords[1])
+
+                                //mapa ze priblizi pri spatnem typu na mesto
+                                m.setCenterZoom(cityCoords, 10, true);
+
+
+                                //vytvorim novou vrstvu na cerveny kruh
                                 var layerCircle = new SMap.Layer.Geometry();
                                 m.addLayer(layerCircle);
                                 layerCircle.enable();
+
 
                                 /* vypocet souradnic bodu na kruznici  */
                                 var radius = x.mapPoints[x.index].radius; /* polomer v km */
@@ -379,7 +425,7 @@ Vue.component(('map-main'), {
                                 console.log('trefil jsi se')
 
                                 //pridame zpravu se zaokr. hodnotamy
-                                x.message = 'Trefil jsi město, ale bylo to těsný kdybys minul o ' + Math.round(x.mapPoints[x.index].radius) + ' km, netrefil by jsi se!';
+                                x.message = 'Trefil jsi město, ale bylo to těsný kdybys minul o ' + (Math.round(x.mapPoints[x.index].radius - result)) + ' km, netrefil by jsi se!';
 
                                 //neodecitam nulove body, tak je pridam a vydelim na desetine cislo abych nemel 30 b ale jen 3, dle narocnosti
                                 //toho daneho "levelu"
@@ -577,7 +623,7 @@ Vue.component(('map-main'), {
         startTimer() {
             this.timerInterval = setInterval(() => (this.timePassed += 1), 1000);
         },
-        addExtraTime(){
+        addExtraTime() {
             this.timePassed -= 2;
         }
     },
