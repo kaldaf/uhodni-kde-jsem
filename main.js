@@ -16,15 +16,15 @@ Vue.component(('map-main'), {
 
                 <div class="results">
                     <h2>Tvé skóre: {{ actualScore }} z {{maximumScore}}</h2>
-                    <p>Uhádnutá města:</p>
+                    <p>Uhádnutá místa:</p>
                     <ul>
-                        <li v-for="guessed in guessedCities">
+                        <li v-for="guessed in guessedPlaces">
                             {{guessed}}
                         </li>
                     </ul>
-                    <p>Neuhádnutá města:</p>
+                    <p>Neuhádnutá místa:</p>
                     <ul>
-                        <li v-for="unreleased in unreleasedCities">
+                        <li v-for="unreleased in unreleasedPlaces">
                             {{unreleased}}
                         </li>
                     </ul>
@@ -34,10 +34,15 @@ Vue.component(('map-main'), {
                 <div class="informations">
                     <h3>Informační panel</h3>
                     <p v-if="message.length > 0"><b>Výsledek</b>: {{message}}</p>
-                    <p><b>Město</b>: {{resultCity}}</p>
+                    <p><b>Místo</b>: {{resultCity}}</p>
                     <div class="score">
                         <p>
                         <b>Počet bodů</b>: {{ actualScore }} z {{maximumScore}}
+                        </p>
+                    </div>
+                    <div class="score">
+                        <p>
+                        <b>Úroveň</b>: {{ index+1 }} / {{ mapPoints.length }}
                         </p>
                     </div>
                 </div>
@@ -86,74 +91,74 @@ Vue.component(('map-main'), {
             message: '',
             circleLayer: null,
             gameOver: false,
-            guessedCities: [],
+            guessedPlaces: [],
             distance: 0,
-            unreleasedCities: [],
+            unreleasedPlaces: [],
             resultCity: 'Pozorně sleduj!',
             mapPoints: [{
                     coords: [16.3109993, 49.8705186],
                     panoramaId: 59070154,
-                    name: 'Litomyšl',
+                    name: 'Smetanovo náměstí - Litomyšl',
                     radius: 15
                 },
                 {
                     coords: [16.6111074, 49.9119302],
                     panoramaId: 58098546,
-                    name: 'Lanškroun',
+                    name: 'nám. J. M. Marků - Lanškroun',
                     radius: 30
                 },
                 {
                     coords: [15.8327123, 50.2090749],
                     panoramaId: 68669620,
-                    name: 'Hradec Králové',
+                    name: 'Velké náměstí - Hradec Králové',
                     radius: 15
                 },
                 {
                     coords: [16.4680344, 49.7562868],
                     panoramaId: 59262006,
-                    name: 'Svitavy',
+                    name: 'náměstí Míru - Svitavy',
                     radius: 30
                 },
                 {
                     coords: [16.2659757, 49.7143888],
                     panoramaId: 59204394,
-                    name: 'Polička',
+                    name: 'Palackého náměstí - Polička',
                     radius: 30
                 },
                 {
                     coords: [15.7792888, 50.0384971],
                     panoramaId: 68222468,
-                    name: 'Pardubice',
+                    name: 'Pernštýnské náměstí - Pardubice',
                     radius: 10
                 },
                 {
                     coords: [14.4213925, 50.0875035],
                     panoramaId: 68069556,
-                    name: 'Staroměstské náměstí',
+                    name: 'Staroměstské náměstí - Praha',
                     radius: 5
                 },
                 {
                     coords: [12.8663186, 50.2302053],
                     panoramaId: 54970771,
-                    name: 'Karlovy Vary',
+                    name: 'náměstí Republiky - Karlovy Vary',
                     radius: 30
                 },
                 {
                     coords: [17.3080903, 49.5596000],
                     panoramaId: 58879911,
-                    name: 'Olomouc',
+                    name: 'obchodní centrum Olympia - Olomouc',
                     radius: 30
                 },
                 {
                     coords: [18.0101420, 49.5947645],
                     panoramaId: 50723794,
-                    name: 'Nový Jičín',
+                    name: 'Masarykovo náměstí - Nový Jičín',
                     radius: 30
                 },
                 {
                     coords: [14.4750107, 48.9742668],
                     panoramaId: 57177087,
-                    name: 'České Budějovice',
+                    name: 'náměstí Přemysla Otakara II. - České Budějovice',
                     radius: 30
                 },
             ],
@@ -261,7 +266,7 @@ Vue.component(('map-main'), {
 
                             var g = new SMap.Geometry(SMap.GEOMETRY_POLYLINE, null, coords);
                             vrstva.addGeometry(g);/*/
-                
+
                             //vytvorim vrstvu na rucni mereni
                             var layerManual = new SMap.Layer.Geometry();
                             m.addLayer(layerManual);
@@ -319,7 +324,7 @@ Vue.component(('map-main'), {
                             //rozhodujeme zda typ uzivatele byl v radiusu (narocnost kola)
                             if (result >= x.mapPoints[x.index].radius) {
                                 //pridame zpravu se zaokr. hodnotamy
-                                x.message = 'Netrefil jsi město o ' + Math.round((result - x.mapPoints[x.index].radius)) + ' km';
+                                x.message = 'Netrefil jsi místo o ' + Math.round((result - x.mapPoints[x.index].radius)) + ' km';
 
                                 //kvuli debugu logneme  data
                                 console.log('netrefil jsi se');
@@ -330,14 +335,14 @@ Vue.component(('map-main'), {
                                 //vytvorim div nastavim mu css, kde se ma zobrazovat
                                 const popisek = JAK.mel(
                                     'div', {
-                                        innerText: 'Netrefil jsi město o ' + Math.round((result - x.mapPoints[x.index].radius)) + ' km'
+                                        innerText: 'Netrefil jsi místo: ' + x.mapPoints[x.index].name + ' o ' + Math.round((result - x.mapPoints[x.index].radius)) + ' km'
                                     }, {
                                         position: 'relative',
                                         alignItems: 'center',
                                         justifyContent: 'center',
                                         borderRadius: '5px',
                                         padding: '8px 1rem',
-                                        left: '-4rem',
+                                        left: '4rem',
                                         top: '-4rem',
                                         display: 'flex',
                                         background: 'rgb(255, 255, 255)',
@@ -350,10 +355,20 @@ Vue.component(('map-main'), {
                                 //vnorim popisek do hlavni znacky
                                 znacka.appendChild(popisek);
 
+
                                 //vytvorim marker (znacku), ktera bude div a vlozim do ni marker
                                 const vrstvaMarker = new SMap.Layer.Marker();
                                 m.addLayer(vrstvaMarker);
                                 vrstvaMarker.enable();
+
+                                //natypuju je do smap souradnice
+                                var halfCoords = SMap.Coords.fromWGS84(x.mapPoints[x.index].coords[0], x.mapPoints[x.index].coords[1])
+
+                                //pridam marker do zhruba poloviny cesty
+                                const marker = new SMap.Marker(halfCoords, null, {
+                                    url: znacka
+                                });
+                                vrstvaMarker.addMarker(marker);
 
                                 //pridam aktuani vrstvu do dat, abych ji potom mohl smazat
                                 x.actualMarker = vrstvaMarker;
@@ -376,7 +391,7 @@ Vue.component(('map-main'), {
 
                                 */
 
-                               var cityCoords = SMap.Coords.fromWGS84(x.mapPoints[x.index].coords[0], x.mapPoints[x.index].coords[1])
+                                var cityCoords = SMap.Coords.fromWGS84(x.mapPoints[x.index].coords[0], x.mapPoints[x.index].coords[1])
 
                                 //mapa ze priblizi pri spatnem typu na mesto
                                 m.setCenterZoom(cityCoords, 10, true);
@@ -417,7 +432,7 @@ Vue.component(('map-main'), {
                                 x.circleLayer = layerCircle;
 
                                 //pridam do dat spatne uhodnutych mest nazev mesta
-                                x.unreleasedCities.push(x.mapPoints[x.index].name);
+                                x.unreleasedPlaces.push(x.mapPoints[x.index].name);
 
                             } else {
 
@@ -425,14 +440,14 @@ Vue.component(('map-main'), {
                                 console.log('trefil jsi se')
 
                                 //pridame zpravu se zaokr. hodnotamy
-                                x.message = 'Trefil jsi město, ale bylo to těsný kdybys minul o ' + (Math.round(x.mapPoints[x.index].radius - result)) + ' km, netrefil by jsi se!';
+                                x.message = 'Trefil jsi místo, ale bylo to těsný kdybys minul o ' + (Math.round(x.mapPoints[x.index].radius - result)) + ' km, netrefil by jsi se!';
 
                                 //neodecitam nulove body, tak je pridam a vydelim na desetine cislo abych nemel 30 b ale jen 3, dle narocnosti
                                 //toho daneho "levelu"
                                 x.score.push(x.mapPoints[x.index].radius / 10)
 
                                 //pridam do dat uhodnutych mest nazev mesta
-                                x.guessedCities.push(x.mapPoints[x.index].name);
+                                x.guessedPlaces.push(x.mapPoints[x.index].name);
 
 
                                 var layer = new SMap.Layer.Geometry();
