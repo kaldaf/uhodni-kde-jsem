@@ -511,6 +511,8 @@ Vue.component(('map-main'), {
                                         alert('Panorama se nepodařilo zobrazit !');
                                     });
 
+                                    m.syncPort();
+
                                     //zmenim zpravy, ktere se zobrazuji na informacnim panelu
                                     x.message = '';
                                     x.resultCity = 'Pozorně sleduj!';
