@@ -10,7 +10,7 @@ Vue.component(('map-main'), {
         <div class="app-data">
             <div class="maps" v-bind:class="{ showed: showed }">
                 <div class="mapa" id="main-map"></div>
-                <div class="panaroma" id="main-pan"></div>
+                <div class="panaroma main-pan"></div>
             </div>
             <div v-if="gameOver" class="over">
 
@@ -201,7 +201,7 @@ Vue.component(('map-main'), {
             var m;
             var czechCenter = SMap.Coords.fromWGS84(15.4075142, 49.7919411);
             //vytvoreni sceny 
-            var panoramaScene = new SMap.Pano.Scene(document.getElementById("main-pan"), {
+            var panoramaScene = new SMap.Pano.Scene(document.querySelector(".main-pan"), {
                 //options -> moznosts definovat parametry viz. https://api.mapy.cz/doc/SMap.Pano.Scene.html#SMap.Pano.Scene
                 //v tomto priklade, zakazeme moznost se pohybovat, a pouze muzeme posouvat kameru 360°
                 nav: false
@@ -507,11 +507,7 @@ Vue.component(('map-main'), {
                                     x.startTimer();
 
                                     //prepisu nastaveni panaromata a dam mu souradnice z dalsiho kola
-                                    SMap.Pano.get(x.mapPoints[x.index].panoramaId).then((place) => panoramaScene.show(place, {
-                                        yaw: 2.35,
-                                        fov: 1,
-                                        pitch: -0.214,
-                                    }), () => {
+                                    SMap.Pano.get(x.mapPoints[x.index].panoramaId).then((place) => panoramaScene.show(place), () => {
                                         alert('Panorama se nepodařilo zobrazit !');
                                     });
 
