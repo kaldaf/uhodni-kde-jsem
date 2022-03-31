@@ -5,8 +5,9 @@ https://poznavac.twentio.cz/
 
 ## Bugs:
 
-* vypočítaná trasa je pozemní nýbrž letecká, tím pádem zvolený bod nemusí odpovídat letecké hodnotě "vzdušnou čarou" **vyřešeno**
-* aktuální verze není moc mobile friendly, pracuje se na tom **vyřešeno**
+* [x] vypočítaná trasa je pozemní nýbrž letecká, tím pádem zvolený bod nemusí odpovídat letecké hodnotě "vzdušnou čarou"
+* [x] aktuální verze není moc mobile friendly, pracuje se na tom
+* [ ] Zmizení panaroma - černá obrazovka
 
 ## Features:
 * Trasa se již nepočítá cestou autem, ale počítá se přes algoritmus - Sférický zákon kosinů (viz. http://www.movable-type.co.uk/scripts/latlong.html)
